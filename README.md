@@ -6,7 +6,7 @@ It can do the following things:
 
 * Simulate packet loss, duplication, jitter, reordering, and rate limiting
 * Selective impairment based on ip/port
-* Inbound impairment in addition to outbound impairment
+* Inbound or outbound impairment
 * Automatically cleans up any impairment on exit or Ctrl-C
 
 netimpair.py is a Python 3 script. For systems that only support Python 2 in its default repositories (i.e. CentOS 6), you can use netimpair2.py
