@@ -130,6 +130,7 @@ class NetemInstance:
 			subprocess.call(shlex.split("sudo tc qdisc del dev {} ingress".format(self.real_nic)))
 			subprocess.call(shlex.split("sudo ip link set dev ifb0 down"))
 		subprocess.call(shlex.split("sudo tc qdisc del root dev {}".format(self.nic)))
+		print("Network impairment teardown complete.")
 		
 	def netem(self, loss_ratio = 0, loss_corr = 0, dup_ratio = 0, delay = 0, jitter = 0, delay_jitter_corr = 0, reorder_ratio = 0, reorder_corr = 0, toggle = [1000000]):
 		assert subprocess.call(shlex.split("sudo tc qdisc add dev {} parent 1:3 handle 30: netem".format(self.nic))) == 0
@@ -200,6 +201,7 @@ def main():
 		if netem.initialize(args.nic, args.inbound, args.include, args.exclude):
 			# Catch SIGINT and SIGTERM so that we can cleanup
 			def handleSIGTERM(signum, frame):
+				print("")
 				netem.teardown()
 				# Print blank line before quitting to deal with some crappy terminal behavior
 				print("")
