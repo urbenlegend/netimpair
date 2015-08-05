@@ -50,7 +50,7 @@ sudo ./netimpair.py -n eth0 rate --limit 1000
 sudo ./netimpair.py -n eth0 --inbound netem --loss_ratio 5
 ```
 
-Selectively impair certain traffic
+####Selectively impair certain traffic
 
 ```bash
 # Add 5% loss on packets with source IP of 10.194.247.50 and destination port 9001
@@ -62,4 +62,14 @@ sudo ./netimpair.py -n eth0 --exclude dst=10.194.247.50,sport=10000 netem --loss
 sudo ./netimpair.py -n eth0 --exclude dport=22 netem --loss_ratio 5
 # Exclude a certain source IP on all ports
 sudo ./netimpair.py -n eth0 --exclude src=10.194.247.50 netem --loss_ratio 5
+```
+
+####Additional parameters can be found with the help option
+```bash
+# Basic help
+./netimpair.py -h
+# Help for the netem subcommand
+./netimpair.py netem -h
+# Help for the rate subcommand
+./netimpair.py rate -h
 ```
