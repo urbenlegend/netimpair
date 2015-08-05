@@ -170,7 +170,7 @@ def main():
 	argparser.add_argument("-n", "--nic", metavar="INTERFACE", required=True, type=str, help="name of the network interface to be impaired")
 	argparser.add_argument("--inbound", action="store_true", help="do inbound impairment on the interface instead of outbound")
 	argparser.add_argument("--include", action="append", default=[], help="ip addresses and/or ports to include in network impairment (example: --include src=ip,sport=portnum --include dst=ip,dport=portnum)")
-	argparser.add_argument("--exclude", action="append", default=["sport=22", "dport=22", "sport=333", "dport=333", "sport=2600", "dport=2600", "sport=3306", "dport=3306", "sport=3389", "dport=3389", "sport=3390", "dport=3390", "sport=3391", "dport=3391", "sport=5900", "dport=5900", "sport=5901", "dport=5901", "sport=5902", "dport=5902", "sport=3333", "dport=3333"], help="ip addresses and/or ports to exclude from network impairment (example: --exclude src=ip,sport=portnum --exclude dst=ip,dport=portnum)")
+	argparser.add_argument("--exclude", action="append", default=["sport=22", "dport=22"], help="ip addresses and/or ports to exclude from network impairment (example: --exclude src=ip,sport=portnum --exclude dst=ip,dport=portnum)")
 	subparsers = argparser.add_subparsers(title="impairments", dest="subparser_name", description="specify which impairment to enable", help="valid impairments")
 	# loss args
 	netem_args = subparsers.add_parser("netem", help="enable packet loss")
