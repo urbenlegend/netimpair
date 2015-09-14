@@ -207,14 +207,14 @@ class NetemInstance:
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
 
-    def rate(self, limit, toggle):
+    def rate(self, limit, buffer, latency, toggle):
         assert subprocess.call(
             shlex.split(
-                "tc qdisc add dev {} parent 1:3 handle 30: tbf rate 1000mbit buffer 1600 latency 20ms".format(
-                    self.nic))) == 0
+                "tc qdisc add dev {} parent 1:3 handle 30: tbf rate 1000mbit buffer {} latency {}ms".format(
+                    self.nic, buffer, latency))) == 0
         while len(toggle) != 0:
-            impair_cmd = "tc qdisc change dev {} parent 1:3 handle 30: tbf rate {}kbit buffer 1600 latency 20ms".format(
-                self.nic, limit)
+            impair_cmd = "tc qdisc change dev {} parent 1:3 handle 30: tbf rate {}kbit buffer {} latency {}ms".format(
+                self.nic, limit, buffer, latency)
             print("Setting network impairment:")
             print(impair_cmd)
             # Set network impairment
@@ -225,8 +225,8 @@ class NetemInstance:
                 return
             assert subprocess.call(
                 shlex.split(
-                    "tc qdisc change dev {} parent 1:3 handle 30: tbf rate 1000mbit buffer 1600 latency 20ms".format(
-                        self.nic))) == 0
+                    "tc qdisc change dev {} parent 1:3 handle 30: tbf rate 1000mbit buffer {} latency {}ms".format(
+                        self.nic, buffer, latency))) == 0
             print(
                 "Impairment stopped timestamp: {}".format(
                     datetime.datetime.today()))
@@ -326,6 +326,16 @@ def main():
         default=0,
         help="specify rate limit in kb")
     rate_args.add_argument(
+        "--buffer",
+        type=int,
+        default=2000,
+        help="specify how many tokens in terms of bytes should be available")
+    rate_args.add_argument(
+        "--latency",
+        type=int,
+        default=20,
+        help="specify the maximum time packets can stay in the queue before getting dropped")
+    rate_args.add_argument(
         "--toggle",
         nargs="+",
         type=int,
@@ -372,7 +382,7 @@ def main():
                     args.reorder_corr,
                     args.toggle)
             elif args.subparser_name == "rate":
-                netem.rate(args.limit, args.toggle)
+                netem.rate(args.limit, args.buffer, args.latency, args.toggle)
 
             # Shutdown cleanly
             netem.teardown()
