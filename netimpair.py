@@ -38,7 +38,8 @@ import traceback
 
 class NetemInstance:
 
-    def _generate_filters(self, filter_list):
+    @staticmethod
+    def _generate_filters(filter_list):
         filter_strings = []
         filter_strings_ipv6 = []
         for tcfilter in filter_list:
