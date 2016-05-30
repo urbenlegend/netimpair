@@ -154,8 +154,6 @@ class NetemInstance:
             print(exclude_filter_ipv6)
             self._check_call(exclude_filter_ipv6)
 
-        return True
-
     def netem(
             self,
             loss_ratio=0,
@@ -242,50 +240,41 @@ def main():
 
     try:
         netem = NetemInstance()
-        if netem.initialize(
-                args.nic,
-                args.inbound,
-                args.include,
-                args.exclude):
+        netem.initialize(args.nic, args.inbound, args.include, args.exclude)
 
-            def signal_action(signum, frame):
-                '''To be executed upon exit signal.'''
-                print()
-                netem.teardown()
-                # Print blank line before quitting to deal with some crappy
-                # terminal behavior
-                print()
-                exit(5)
-
-            # Catch SIGINT and SIGTERM so that we can clean up
-            for sig in [signal.SIGINT, signal.SIGTERM]:
-                signal.signal(sig, signal_action)
-
-            print('Network impairment starting.',
-                  'Press Ctrl-C to restore normal behavior and quit.')
-
-            # Do impairment
-            if args.subparser_name == 'netem':
-                netem.netem(
-                    args.loss_ratio,
-                    args.loss_corr,
-                    args.dup_ratio,
-                    args.delay,
-                    args.jitter,
-                    args.delay_jitter_corr,
-                    args.reorder_ratio,
-                    args.reorder_corr,
-                    args.toggle)
-            elif args.subparser_name == 'rate':
-                netem.rate(args.limit, args.buffer, args.latency, args.toggle)
-
-            # Shutdown cleanly
+        def signal_action(signum, frame):
+            '''To be executed upon exit signal.'''
+            print()
             netem.teardown()
+            # Print blank line before quitting to deal with some crappy
+            # terminal behavior
+            print()
+            exit(5)
 
-        else:
-            print('NetemInstance failed to initialize correctly. Terminating')
-            netem.teardown()
-            exit(1)
+        # Catch SIGINT and SIGTERM so that we can clean up
+        for sig in [signal.SIGINT, signal.SIGTERM]:
+            signal.signal(sig, signal_action)
+
+        print('Network impairment starting.',
+              'Press Ctrl-C to restore normal behavior and quit.')
+
+        # Do impairment
+        if args.subparser_name == 'netem':
+            netem.netem(
+                args.loss_ratio,
+                args.loss_corr,
+                args.dup_ratio,
+                args.delay,
+                args.jitter,
+                args.delay_jitter_corr,
+                args.reorder_ratio,
+                args.reorder_corr,
+                args.toggle)
+        elif args.subparser_name == 'rate':
+            netem.rate(args.limit, args.buffer, args.latency, args.toggle)
+
+        # Shutdown cleanly
+        netem.teardown()
     except subprocess.CalledProcessError:
         traceback.print_exc()
         netem.teardown()
