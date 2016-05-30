@@ -361,16 +361,19 @@ def main():
                 args.inbound,
                 args.include,
                 args.exclude):
-            # Catch SIGINT and SIGTERM so that we can cleanup
-            def handleSIGTERM(signum, frame):
+
+            def signal_action(signum, frame):
+                '''To be executed upon exit signal.'''
                 print()
                 netem.teardown()
                 # Print blank line before quitting to deal with some crappy
                 # terminal behavior
                 print()
                 exit(5)
-            signal.signal(signal.SIGINT, handleSIGTERM)
-            signal.signal(signal.SIGTERM, handleSIGTERM)
+
+            # Catch SIGINT and SIGTERM so that we can clean up
+            for sig in [signal.SIGINT, signal.SIGTERM]:
+                signal.signal(sig, signal_action)
 
             print(
                 'Network impairment starting. Press Ctrl-C to restore normal behavior and quit.')
