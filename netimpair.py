@@ -90,7 +90,7 @@ class NetemInstance:
             include.append('src=::/0')
 
         print('Including the following for network impairment:')
-        include_filters, include_filters_ipv6 = self._generateFilters(include)
+        include_filters, include_filters_ipv6 = self._generate_filters(include)
         for filter_string in include_filters:
             include_filter = 'tc filter add dev {0} protocol ip parent 1:0 prio 3 u32 {1}flowid 1:3'.format(
                 self.nic, filter_string)
@@ -104,7 +104,7 @@ class NetemInstance:
             assert subprocess.call(shlex.split(include_filter_ipv6)) == 0
 
         print('Excluding the following from network impairment:')
-        exclude_filters, exclude_filters_ipv6 = self._generateFilters(exclude)
+        exclude_filters, exclude_filters_ipv6 = self._generate_filters(exclude)
         for filter_string in exclude_filters:
             exclude_filter = 'tc filter add dev {0} protocol ip parent 1:0 prio 1 u32 {1}flowid 1:2'.format(
                 self.nic, filter_string)
@@ -119,7 +119,7 @@ class NetemInstance:
 
         return True
 
-    def _generateFilters(self, filter_list):
+    def _generate_filters(self, filter_list):
         filter_strings = []
         filter_strings_ipv6 = []
         for tcfilter in filter_list:
