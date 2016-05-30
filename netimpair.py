@@ -41,7 +41,9 @@ class NetemInstance(object):
 
     def __init__(self, nic, inbound, include, exclude):
         self.inbound = inbound
-        self.include = include
+        # Work around broken default append behavior
+        # Add default 'src=0/0' if include list is empty
+        self.include = include if include else ['src=0/0', 'src=::/0']
         self.exclude = exclude
 
         if self.inbound:
@@ -125,12 +127,6 @@ class NetemInstance(object):
             'tc qdisc add dev {0} root handle 1: prio'.format(self.nic))
 
         # Apply selective impairment based on include and exclude parameters
-        # Work around broken default append behavior. Add default 'src=0/0' if
-        # include list is empty
-        if len(self.include) == 0:
-            self.include.append('src=0/0')
-            self.include.append('src=::/0')
-
         print('Including the following for network impairment:')
         include_filters, include_filters_ipv6 = self._generate_filters(
             self.include)
