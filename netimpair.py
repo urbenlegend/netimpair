@@ -24,14 +24,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-import subprocess
-import shlex
-import time
-import signal
-import traceback
 import argparse
 import datetime
 import os
+import shlex
+import signal
+import subprocess
+import time
+import traceback
 
 
 class NetemInstance:
