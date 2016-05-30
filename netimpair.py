@@ -122,28 +122,30 @@ class NetemInstance:
         print('Including the following for network impairment:')
         include_filters, include_filters_ipv6 = self._generate_filters(include)
         for filter_string in include_filters:
-            include_filter = 'tc filter add dev {0} protocol ip parent 1:0 prio 3 u32 {1}flowid 1:3'.format(
-                self.nic, filter_string)
+            include_filter = 'tc filter add dev {0} protocol ip parent 1:0 ' \
+                'prio 3 u32 {1}flowid 1:3'.format(self.nic, filter_string)
             print(include_filter)
             assert self._call(include_filter)
 
         for filter_string_ipv6 in include_filters_ipv6:
-            include_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 parent 1:0 prio 4 u32 {1}flowid 1:3'.format(
-                self.nic, filter_string_ipv6)
+            include_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 ' \
+                'parent 1:0 prio 4 u32 {1}flowid 1:3'.format(
+                    self.nic, filter_string_ipv6)
             print(include_filter_ipv6)
             assert self._call(include_filter_ipv6)
 
         print('Excluding the following from network impairment:')
         exclude_filters, exclude_filters_ipv6 = self._generate_filters(exclude)
         for filter_string in exclude_filters:
-            exclude_filter = 'tc filter add dev {0} protocol ip parent 1:0 prio 1 u32 {1}flowid 1:2'.format(
-                self.nic, filter_string)
+            exclude_filter = 'tc filter add dev {0} protocol ip parent 1:0 ' \
+                'prio 1 u32 {1}flowid 1:2'.format(self.nic, filter_string)
             print(exclude_filter)
             assert self._call(exclude_filter)
 
         for filter_string_ipv6 in exclude_filters_ipv6:
-            exclude_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 parent 1:0 prio 2 u32 {1}flowid 1:2'.format(
-                self.nic, filter_string_ipv6)
+            exclude_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 ' \
+                'parent 1:0 prio 2 u32 {1}flowid 1:2'.format(
+                    self.nic, filter_string_ipv6)
             print(exclude_filter_ipv6)
             assert self._call(exclude_filter_ipv6)
 
@@ -164,8 +166,11 @@ class NetemInstance:
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
                 self.nic))
         while len(toggle) != 0:
-            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% reorder {7}% {8}%'\
-                .format(self.nic, loss_ratio, loss_corr, dup_ratio, delay, jitter, delay_jitter_corr, reorder_ratio, reorder_corr)
+            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: ' \
+                'netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% ' \
+                'reorder {7}% {8}%'.format(
+                    self.nic, loss_ratio, loss_corr, dup_ratio, delay, jitter,
+                    delay_jitter_corr, reorder_ratio, reorder_corr)
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
@@ -189,8 +194,9 @@ class NetemInstance:
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(self.nic, buffer, latency))
         while len(toggle) != 0:
-            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate {1}kbit buffer {2} latency {3}ms'.format(
-                self.nic, limit, buffer, latency)
+            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf ' \
+                'rate {1}kbit buffer {2} latency {3}ms'.format(
+                    self.nic, limit, buffer, latency)
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
@@ -225,7 +231,8 @@ def main():
     args = parse_args()
 
     if os.geteuid() != 0:
-        print('You need root permissions to enable impairment! Please run with sudo or as root.')
+        print('You need root permissions to enable impairment!',
+              'Please run with sudo or as root.')
         exit(1)
 
     try:
@@ -249,8 +256,8 @@ def main():
             for sig in [signal.SIGINT, signal.SIGTERM]:
                 signal.signal(sig, signal_action)
 
-            print(
-                'Network impairment starting. Press Ctrl-C to restore normal behavior and quit.')
+            print('Network impairment starting.',
+                  'Press Ctrl-C to restore normal behavior and quit.')
 
             # Do impairment
             if args.subparser_name == 'netem':
