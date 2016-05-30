@@ -14,35 +14,35 @@ netimpair.py can do the following things:
 
 netimpair.py supports both Python 2 and 3.
 
-####Jitter
+#### Jitter
 
 ```bash
 # Add 200ms jitter
 sudo ./netimpair.py -n eth0 netem --jitter 200
 ```
 
-####Delay
+#### Delay
 
 ```bash
 # Add 200ms delay
 sudo ./netimpair.py -n eth0 netem --delay 200
 ```
 
-####Loss
+#### Loss
 
 ```bash
 # Add 5% loss
 sudo ./netimpair.py -n eth0 netem --loss_ratio 5
 ```
 
-####Rate Control
+#### Rate Control
 
 ```bash
 # Limit rate to 1mbit
 sudo ./netimpair.py -n eth0 rate --limit 1000
 ```
 
-####Impair inbound traffic
+#### Impair inbound traffic
 
 ```bash
 # Append --inbound flag before the impairment keyword to apply inbound impairment
@@ -50,7 +50,7 @@ sudo ./netimpair.py -n eth0 rate --limit 1000
 sudo ./netimpair.py -n eth0 --inbound netem --loss_ratio 5
 ```
 
-####Selectively impair certain traffic
+#### Selectively impair certain traffic
 
 ```bash
 # Add 5% loss on packets with source IP of 10.194.247.50 and destination port 9001
@@ -64,7 +64,7 @@ sudo ./netimpair.py -n eth0 --exclude dport=22 netem --loss_ratio 5
 sudo ./netimpair.py -n eth0 --exclude src=10.194.247.50 netem --loss_ratio 5
 ```
 
-####Additional parameters can be found with the help option
+#### Additional parameters can be found with the help option
 ```bash
 # Basic help
 ./netimpair.py -h
