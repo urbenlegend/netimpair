@@ -40,8 +40,13 @@ class NetemInstance:
 
     @staticmethod
     def _call(command):
-        '''Run command and return the returncode attribute.'''
-        return subprocess.call(shlex.split(command)) == 0
+        '''Run command.'''
+        subprocess.call(shlex.split(command))
+
+    @staticmethod
+    def _check_call(command):
+        '''Run command, raising CalledProcessError if it fails.'''
+        subprocess.check_call(shlex.split(command))
 
     @staticmethod
     def _generate_filters(filter_list):
@@ -88,15 +93,15 @@ class NetemInstance:
             self.inbound = inbound
             self.real_nic = nic
             self.nic = 'ifb1'
-            assert self._call('modprobe ifb')
-            assert self._call('ip link set dev {0} up'.format(self.nic))
+            self._check_call('modprobe ifb')
+            self._check_call('ip link set dev {0} up'.format(self.nic))
             # Delete ingress device before trying to add
             self._call('tc qdisc del dev {0} ingress'.format(self.real_nic))
             # Add ingress device
-            assert self._call(
+            self._check_call(
                 'tc qdisc replace dev {0} ingress'.format(self.real_nic))
             # Add filter to redirect ingress to virtual ifb device
-            assert self._call(
+            self._check_call(
                 'tc filter replace dev {0} parent ffff: protocol ip prio 1 '
                 'u32 match u32 0 0 flowid 1:1 action mirred egress redirect '
                 'dev {1}'.format(self.real_nic, self.nic))
@@ -109,7 +114,7 @@ class NetemInstance:
         self._call('tc qdisc del root dev {0}'.format(self.nic))
 
         # Create prio qdisc so we can redirect some traffic to be unimpaired
-        assert self._call(
+        self._check_call(
             'tc qdisc add dev {0} root handle 1: prio'.format(self.nic))
 
         # Apply selective impairment based on include and exclude parameters
@@ -125,14 +130,14 @@ class NetemInstance:
             include_filter = 'tc filter add dev {0} protocol ip parent 1:0 ' \
                 'prio 3 u32 {1}flowid 1:3'.format(self.nic, filter_string)
             print(include_filter)
-            assert self._call(include_filter)
+            self._check_call(include_filter)
 
         for filter_string_ipv6 in include_filters_ipv6:
             include_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 ' \
                 'parent 1:0 prio 4 u32 {1}flowid 1:3'.format(
                     self.nic, filter_string_ipv6)
             print(include_filter_ipv6)
-            assert self._call(include_filter_ipv6)
+            self._check_call(include_filter_ipv6)
 
         print('Excluding the following from network impairment:')
         exclude_filters, exclude_filters_ipv6 = self._generate_filters(exclude)
@@ -140,14 +145,14 @@ class NetemInstance:
             exclude_filter = 'tc filter add dev {0} protocol ip parent 1:0 ' \
                 'prio 1 u32 {1}flowid 1:2'.format(self.nic, filter_string)
             print(exclude_filter)
-            assert self._call(exclude_filter)
+            self._check_call(exclude_filter)
 
         for filter_string_ipv6 in exclude_filters_ipv6:
             exclude_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 ' \
                 'parent 1:0 prio 2 u32 {1}flowid 1:2'.format(
                     self.nic, filter_string_ipv6)
             print(exclude_filter_ipv6)
-            assert self._call(exclude_filter_ipv6)
+            self._check_call(exclude_filter_ipv6)
 
         return True
 
@@ -162,7 +167,7 @@ class NetemInstance:
             reorder_ratio=0,
             reorder_corr=0,
             toggle=[1000000]):
-        assert self._call(
+        self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
                 self.nic))
         while len(toggle) != 0:
@@ -174,14 +179,14 @@ class NetemInstance:
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
-            assert self._call(impair_cmd)
+            self._check_call(impair_cmd)
             print(
                 'Impairment timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
             if len(toggle) == 0:
                 return
-            assert self._call(
+            self._check_call(
                 'tc qdisc change dev {0} parent 1:3 handle 30: netem'.format(
                     self.nic))
             print(
@@ -190,7 +195,7 @@ class NetemInstance:
             time.sleep(toggle.pop(0))
 
     def rate(self, limit, buffer, latency, toggle):
-        assert self._call(
+        self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(self.nic, buffer, latency))
         while len(toggle) != 0:
@@ -200,14 +205,14 @@ class NetemInstance:
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
-            assert self._call(impair_cmd)
+            self._check_call(impair_cmd)
             print(
                 'Impairment timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
             if len(toggle) == 0:
                 return
-            assert self._call(
+            self._check_call(
                 'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate '
                 '1000mbit buffer {1} latency {2}ms'.format(
                     self.nic, buffer, latency))
@@ -281,7 +286,7 @@ def main():
             print('NetemInstance failed to initialize correctly. Terminating')
             netem.teardown()
             exit(1)
-    except AssertionError:
+    except subprocess.CalledProcessError:
         traceback.print_exc()
         netem.teardown()
         exit(5)
