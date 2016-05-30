@@ -278,10 +278,14 @@ def main():
         exit(1)
 
     try:
+        # Create NetemInstance
         netem = NetemInstance(
             args.nic, args.inbound, args.include, args.exclude)
+
+        # Perform setup
         netem.initialize()
 
+        # Catch signals
         init_signals(netem)
 
         # Do impairment
