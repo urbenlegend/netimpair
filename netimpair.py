@@ -230,6 +230,26 @@ class NetemInstance:
         print('Network impairment teardown complete.')
 
 
+def init_signals(netem):
+    '''Catch signals in order to stop network impairment before exiting.'''
+
+    def signal_action(signum, frame):
+        '''To be executed upon exit signal.'''
+        print()
+        netem.teardown()
+        # Print blank line before quitting to deal with some crappy
+        # terminal behavior
+        print()
+        exit(5)
+
+    # Catch SIGINT and SIGTERM so that we can clean up
+    for sig in [signal.SIGINT, signal.SIGTERM]:
+        signal.signal(sig, signal_action)
+
+    print('Network impairment starting.',
+          'Press Ctrl-C to restore normal behavior and quit.')
+
+
 def main():
     args = parse_args()
 
@@ -242,21 +262,7 @@ def main():
         netem = NetemInstance()
         netem.initialize(args.nic, args.inbound, args.include, args.exclude)
 
-        def signal_action(signum, frame):
-            '''To be executed upon exit signal.'''
-            print()
-            netem.teardown()
-            # Print blank line before quitting to deal with some crappy
-            # terminal behavior
-            print()
-            exit(5)
-
-        # Catch SIGINT and SIGTERM so that we can clean up
-        for sig in [signal.SIGINT, signal.SIGTERM]:
-            signal.signal(sig, signal_action)
-
-        print('Network impairment starting.',
-              'Press Ctrl-C to restore normal behavior and quit.')
+        init_signals(netem)
 
         # Do impairment
         if args.subparser_name == 'netem':
