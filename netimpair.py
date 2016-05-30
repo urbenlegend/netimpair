@@ -37,6 +37,7 @@ import traceback
 
 
 class NetemInstance:
+    '''Wrapper around netem module and tc command.'''
 
     def __init__(self, nic, inbound, include, exclude):
         self.inbound = inbound
@@ -101,6 +102,7 @@ class NetemInstance:
         return filter_strings, filter_strings_ipv6
 
     def initialize(self):
+        '''Set up traffic control.'''
         if self.inbound:
             self._check_call('modprobe ifb')
             self._check_call('ip link set dev {0} up'.format(self.nic))
@@ -172,6 +174,7 @@ class NetemInstance:
             reorder_ratio=0,
             reorder_corr=0,
             toggle=[1000000]):
+        '''Enable packet loss.'''
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
                 self.nic))
@@ -200,6 +203,7 @@ class NetemInstance:
             time.sleep(toggle.pop(0))
 
     def rate(self, limit, buffer, latency, toggle):
+        '''Enable packet reorder.'''
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(self.nic, buffer, latency))
@@ -227,6 +231,7 @@ class NetemInstance:
             time.sleep(toggle.pop(0))
 
     def teardown(self):
+        '''Reset traffic control rules.'''
         if self.inbound:
             self._call(
                 'tc filter del dev {0} parent ffff: protocol ip prio 1'.format(
@@ -258,6 +263,7 @@ def init_signals(netem):
 
 
 def main():
+    '''Start application.'''
     args = parse_args()
 
     if os.geteuid() != 0:
