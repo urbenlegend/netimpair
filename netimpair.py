@@ -204,8 +204,10 @@ class NetemInstance:
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
 
-    def rate(self, limit, buffer, latency, toggle):
+    def rate(self, limit=0, buffer=2000, latency=20, toggle=None):
         '''Enable packet reorder.'''
+        if toggle is None:
+            toggle = [1000000]
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(self.nic, buffer, latency))
