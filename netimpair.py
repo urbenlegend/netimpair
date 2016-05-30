@@ -165,6 +165,7 @@ class NetemInstance(object):
             self._check_call(exclude_filter_ipv6)
         print()
 
+    # pylint: disable=too-many-arguments
     def netem(
             self,
             loss_ratio=0,
@@ -252,6 +253,7 @@ class NetemInstance(object):
 def init_signals(netem):
     '''Catch signals in order to stop network impairment before exiting.'''
 
+    # pylint: disable=unused-argument
     def signal_action(signum, frame):
         '''To be executed upon exit signal.'''
         print()
