@@ -300,7 +300,7 @@ def main():
 
 
 def parse_args():
-    """Parse command-line arguments."""
+    '''Parse command-line arguments.'''
     argparser = argparse.ArgumentParser(
         description='Network Impairment Test Tool')
 
