@@ -173,8 +173,10 @@ class NetemInstance:
             delay_jitter_corr=0,
             reorder_ratio=0,
             reorder_corr=0,
-            toggle=[1000000]):
+            toggle=None):
         '''Enable packet loss.'''
+        if toggle is None:
+            toggle = [1000000]
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
                 self.nic))
