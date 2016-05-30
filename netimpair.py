@@ -146,6 +146,7 @@ class NetemInstance:
                     self.nic, filter_string_ipv6)
             print(include_filter_ipv6)
             self._check_call(include_filter_ipv6)
+        print()
 
         print('Excluding the following from network impairment:')
         exclude_filters, exclude_filters_ipv6 = self._generate_filters(
@@ -162,6 +163,7 @@ class NetemInstance:
                     self.nic, filter_string_ipv6)
             print(exclude_filter_ipv6)
             self._check_call(exclude_filter_ipv6)
+        print()
 
     def netem(
             self,
@@ -263,7 +265,7 @@ def init_signals(netem):
         signal.signal(sig, signal_action)
 
     print('Network impairment starting.',
-          'Press Ctrl-C to restore normal behavior and quit.')
+          'Press Ctrl-C to restore normal behavior and quit.\n')
 
 
 def main():
