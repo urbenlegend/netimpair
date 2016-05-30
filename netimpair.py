@@ -39,6 +39,11 @@ import traceback
 class NetemInstance:
 
     @staticmethod
+    def _call(command):
+        '''Run command and return the returncode attribute.'''
+        return subprocess.call(shlex.split(command)) == 0
+
+    @staticmethod
     def _generate_filters(filter_list):
         filter_strings = []
         filter_strings_ipv6 = []
@@ -83,43 +88,29 @@ class NetemInstance:
             self.inbound = inbound
             self.real_nic = nic
             self.nic = 'ifb1'
-            assert subprocess.call(shlex.split('modprobe ifb')) == 0
-            assert subprocess.call(
-                shlex.split(
-                    'ip link set dev {0} up'.format(
-                        self.nic))) == 0
+            assert self._call('modprobe ifb')
+            assert self._call('ip link set dev {0} up'.format(self.nic))
             # Delete ingress device before trying to add
-            subprocess.call(
-                shlex.split(
-                    'tc qdisc del dev {0} ingress'.format(
-                        self.real_nic)))
+            self._call('tc qdisc del dev {0} ingress'.format(self.real_nic))
             # Add ingress device
-            assert subprocess.call(
-                shlex.split(
-                    'tc qdisc replace dev {0} ingress'.format(
-                        self.real_nic))) == 0
+            assert self._call(
+                'tc qdisc replace dev {0} ingress'.format(self.real_nic))
             # Add filter to redirect ingress to virtual ifb device
-            assert subprocess.call(
-                shlex.split(
-                    'tc filter replace dev {0} parent ffff: protocol ip prio 1 u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev {1}'.format(
-                        self.real_nic,
-                        self.nic))) == 0
+            assert self._call(
+                'tc filter replace dev {0} parent ffff: protocol ip prio 1 '
+                'u32 match u32 0 0 flowid 1:1 action mirred egress redirect '
+                'dev {1}'.format(self.real_nic, self.nic))
         else:
             # Do normal outbound impairment so no virtual device necessary
             self.inbound = False
             self.nic = nic
 
         # Delete network impairments from any previous runs of this script
-        subprocess.call(
-            shlex.split(
-                'tc qdisc del root dev {0}'.format(
-                    self.nic)))
+        self._call('tc qdisc del root dev {0}'.format(self.nic))
 
         # Create prio qdisc so we can redirect some traffic to be unimpaired
-        assert subprocess.call(
-            shlex.split(
-                'tc qdisc add dev {0} root handle 1: prio'.format(
-                    self.nic))) == 0
+        assert self._call(
+            'tc qdisc add dev {0} root handle 1: prio'.format(self.nic))
 
         # Apply selective impairment based on include and exclude parameters
         # Work around broken default append behavior. Add default 'src=0/0' if
@@ -134,13 +125,13 @@ class NetemInstance:
             include_filter = 'tc filter add dev {0} protocol ip parent 1:0 prio 3 u32 {1}flowid 1:3'.format(
                 self.nic, filter_string)
             print(include_filter)
-            assert subprocess.call(shlex.split(include_filter)) == 0
+            assert self._call(include_filter)
 
         for filter_string_ipv6 in include_filters_ipv6:
             include_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 parent 1:0 prio 4 u32 {1}flowid 1:3'.format(
                 self.nic, filter_string_ipv6)
             print(include_filter_ipv6)
-            assert subprocess.call(shlex.split(include_filter_ipv6)) == 0
+            assert self._call(include_filter_ipv6)
 
         print('Excluding the following from network impairment:')
         exclude_filters, exclude_filters_ipv6 = self._generate_filters(exclude)
@@ -148,13 +139,13 @@ class NetemInstance:
             exclude_filter = 'tc filter add dev {0} protocol ip parent 1:0 prio 1 u32 {1}flowid 1:2'.format(
                 self.nic, filter_string)
             print(exclude_filter)
-            assert subprocess.call(shlex.split(exclude_filter)) == 0
+            assert self._call(exclude_filter)
 
         for filter_string_ipv6 in exclude_filters_ipv6:
             exclude_filter_ipv6 = 'tc filter add dev {0} protocol ipv6 parent 1:0 prio 2 u32 {1}flowid 1:2'.format(
                 self.nic, filter_string_ipv6)
             print(exclude_filter_ipv6)
-            assert subprocess.call(shlex.split(exclude_filter_ipv6)) == 0
+            assert self._call(exclude_filter_ipv6)
 
         return True
 
@@ -169,54 +160,51 @@ class NetemInstance:
             reorder_ratio=0,
             reorder_corr=0,
             toggle=[1000000]):
-        assert subprocess.call(
-            shlex.split(
-                'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
-                    self.nic))) == 0
+        assert self._call(
+            'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
+                self.nic))
         while len(toggle) != 0:
             impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% reorder {7}% {8}%'\
                 .format(self.nic, loss_ratio, loss_corr, dup_ratio, delay, jitter, delay_jitter_corr, reorder_ratio, reorder_corr)
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
-            assert subprocess.call(shlex.split(impair_cmd)) == 0
+            assert self._call(impair_cmd)
             print(
                 'Impairment timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
             if len(toggle) == 0:
                 return
-            assert subprocess.call(
-                shlex.split(
-                    'tc qdisc change dev {0} parent 1:3 handle 30: netem'.format(
-                        self.nic))) == 0
+            assert self._call(
+                'tc qdisc change dev {0} parent 1:3 handle 30: netem'.format(
+                    self.nic))
             print(
                 'Impairment stopped timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
 
     def rate(self, limit, buffer, latency, toggle):
-        assert subprocess.call(
-            shlex.split(
-                'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit buffer {1} latency {2}ms'.format(
-                    self.nic, buffer, latency))) == 0
+        assert self._call(
+            'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
+            'buffer {1} latency {2}ms'.format(self.nic, buffer, latency))
         while len(toggle) != 0:
             impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate {1}kbit buffer {2} latency {3}ms'.format(
                 self.nic, limit, buffer, latency)
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
-            assert subprocess.call(shlex.split(impair_cmd)) == 0
+            assert self._call(impair_cmd)
             print(
                 'Impairment timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
             if len(toggle) == 0:
                 return
-            assert subprocess.call(
-                shlex.split(
-                    'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate 1000mbit buffer {1} latency {2}ms'.format(
-                        self.nic, buffer, latency))) == 0
+            assert self._call(
+                'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate '
+                '1000mbit buffer {1} latency {2}ms'.format(
+                    self.nic, buffer, latency))
             print(
                 'Impairment stopped timestamp: {0}'.format(
                     datetime.datetime.today()))
@@ -224,19 +212,12 @@ class NetemInstance:
 
     def teardown(self):
         if self.inbound:
-            subprocess.call(
-                shlex.split(
-                    'tc filter del dev {0} parent ffff: protocol ip prio 1'.format(
-                        self.real_nic)))
-            subprocess.call(
-                shlex.split(
-                    'tc qdisc del dev {0} ingress'.format(
-                        self.real_nic)))
-            subprocess.call(shlex.split('ip link set dev ifb0 down'))
-        subprocess.call(
-            shlex.split(
-                'tc qdisc del root dev {0}'.format(
-                    self.nic)))
+            self._call(
+                'tc filter del dev {0} parent ffff: protocol ip prio 1'.format(
+                    self.real_nic))
+            self._call('tc qdisc del dev {0} ingress'.format(self.real_nic))
+            self._call('ip link set dev ifb0 down')
+        self._call('tc qdisc del root dev {0}'.format(self.nic))
         print('Network impairment teardown complete.')
 
 
