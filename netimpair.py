@@ -302,9 +302,9 @@ def parse_args():
     """Parse command-line arguments."""
     argparser = argparse.ArgumentParser(
         description='Network Impairment Test Tool')
+
     argparser.add_argument(
-        '-n',
-        '--nic',
+        '-n', '--nic',
         metavar='INTERFACE',
         required=True,
         type=str,
@@ -317,19 +317,23 @@ def parse_args():
         '--include',
         action='append',
         default=[],
-        help='ip addresses and/or ports to include in network impairment (example: --include src=ip,sport=portnum --include dst=ip,dport=portnum)')
+        help='ip addresses and/or ports to include in network '
+        'impairment (example: --include src=ip,sport=portnum '
+        '--include dst=ip,dport=portnum)')
     argparser.add_argument(
         '--exclude',
         action='append',
-        default=[
-            'sport=22',
-            'dport=22'],
-        help='ip addresses and/or ports to exclude from network impairment (example: --exclude src=ip,sport=portnum --exclude dst=ip,dport=portnum)')
+        default=['dport=22', 'sport=22'],
+        help='ip addresses and/or ports to exclude from network '
+        'impairment (example: --exclude src=ip,sport=portnum '
+        '--exclude dst=ip,dport=portnum)')
+
     subparsers = argparser.add_subparsers(
         title='impairments',
         dest='subparser_name',
         description='specify which impairment to enable',
         help='valid impairments')
+
     # loss args
     netem_args = subparsers.add_parser('netem', help='enable packet loss')
     netem_args.add_argument(
@@ -381,7 +385,9 @@ def parse_args():
         nargs='+',
         type=int,
         default=[1000000],
-        help='toggles impairment on and off on specific intervals (example: --toggle 6 3 5 1 will enable impairment for 6 seconds, turn it off for 3, turn it on for 5, and turn it off for 1')
+        help='toggles impairment on and off on specific intervals (example: '
+        '--toggle 6 3 5 1 will enable impairment for 6 seconds, turn it off '
+        'for 3, turn it on for 5, and turn it off for 1')
 
     # rate limit args
     rate_args = subparsers.add_parser('rate', help='enable packet reorder')
@@ -399,13 +405,16 @@ def parse_args():
         '--latency',
         type=int,
         default=20,
-        help='specify the maximum time packets can stay in the queue before getting dropped')
+        help='specify the maximum time packets can stay in the '
+        'queue before getting dropped')
     rate_args.add_argument(
         '--toggle',
         nargs='+',
         type=int,
         default=[1000000],
-        help='toggles impairment on and off on specific intervals (example: --toggle 6 3 5 1 will enable impairment for 6 seconds, turn it off for 3, turn it on for 5, and turn it off for 1')
+        help='toggles impairment on and off on specific intervals (example: '
+        '--toggle 6 3 5 1 will enable impairment for 6 seconds, turn it off '
+        'for 3, turn it on for 5, and turn it off for 1')
 
     return argparser.parse_args()
 
