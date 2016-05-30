@@ -302,9 +302,9 @@ def parse_args():
 
     argparser.add_argument(
         '-n', '--nic',
+        choices=os.listdir('/sys/class/net'),
         metavar='INTERFACE',
         required=True,
-        type=str,
         help='name of the network interface to be impaired')
     argparser.add_argument(
         '--inbound',
