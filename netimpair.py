@@ -206,17 +206,18 @@ class NetemInstance:
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
 
-    def rate(self, limit=0, buffer=2000, latency=20, toggle=None):
+    def rate(self, limit=0, buffer_length=2000, latency=20, toggle=None):
         '''Enable packet reorder.'''
         if toggle is None:
             toggle = [1000000]
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
-            'buffer {1} latency {2}ms'.format(self.nic, buffer, latency))
+            'buffer {1} latency {2}ms'.format(
+                self.nic, buffer_length, latency))
         while len(toggle) != 0:
             impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf ' \
                 'rate {1}kbit buffer {2} latency {3}ms'.format(
-                    self.nic, limit, buffer, latency)
+                    self.nic, limit, buffer_length, latency)
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
@@ -230,7 +231,7 @@ class NetemInstance:
             self._check_call(
                 'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate '
                 '1000mbit buffer {1} latency {2}ms'.format(
-                    self.nic, buffer, latency))
+                    self.nic, buffer_length, latency))
             print(
                 'Impairment stopped timestamp: {0}'.format(
                     datetime.datetime.today()))
