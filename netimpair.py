@@ -36,7 +36,7 @@ import time
 import traceback
 
 
-class NetemInstance:
+class NetemInstance(object):
     '''Wrapper around netem module and tc command.'''
 
     def __init__(self, nic, inbound, include, exclude):
