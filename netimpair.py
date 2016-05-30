@@ -90,7 +90,7 @@ class NetemInstance:
     def initialize(self, nic, inbound, include, exclude):
         if inbound:
             # Create virtual ifb device to do inbound impairment on
-            self.inbound = inbound
+            self.inbound = True
             self.real_nic = nic
             self.nic = 'ifb1'
             self._check_call('modprobe ifb')
