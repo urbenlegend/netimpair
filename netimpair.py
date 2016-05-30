@@ -24,6 +24,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
+from __future__ import print_function
+
 import argparse
 import datetime
 import os
@@ -361,11 +363,11 @@ def main():
                 args.exclude):
             # Catch SIGINT and SIGTERM so that we can cleanup
             def handleSIGTERM(signum, frame):
-                print('')
+                print()
                 netem.teardown()
                 # Print blank line before quitting to deal with some crappy
                 # terminal behavior
-                print('')
+                print()
                 exit(5)
             signal.signal(signal.SIGINT, handleSIGTERM)
             signal.signal(signal.SIGTERM, handleSIGTERM)
