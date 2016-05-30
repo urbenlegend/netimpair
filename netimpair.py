@@ -38,6 +38,44 @@ import traceback
 
 class NetemInstance:
 
+    def _generate_filters(self, filter_list):
+        filter_strings = []
+        filter_strings_ipv6 = []
+        for tcfilter in filter_list:
+            filter_tokens = tcfilter.split(',')
+            try:
+                filter_string = ''
+                filter_string_ipv6 = ''
+                for token in filter_tokens:
+                    token_split = token.split('=')
+                    key = token_split[0]
+                    value = token_split[1]
+                    # Check for ipv6 addresses and add them to the appropriate
+                    # filter string
+                    if key == 'src' or key == 'dst':
+                        if '::' in value:
+                            filter_string_ipv6 += 'match ip6 {0} {1} '.format(
+                                key, value)
+                        else:
+                            filter_string += 'match ip {0} {1} '.format(
+                                key, value)
+                    else:
+                        filter_string += 'match ip {0} {1} '.format(key, value)
+                        filter_string_ipv6 += 'match ip6 {0} {1} '.format(
+                            key, value)
+                    if key == 'sport' or key == 'dport':
+                        filter_string += '0xffff '
+                        filter_string_ipv6 += '0xffff '
+            except IndexError:
+                print('Invalid filter parameters')
+
+            if filter_string:
+                filter_strings.append(filter_string)
+            if filter_string_ipv6:
+                filter_strings_ipv6.append(filter_string_ipv6)
+
+        return filter_strings, filter_strings_ipv6
+
     def initialize(self, nic, inbound, include, exclude):
         if inbound:
             # Create virtual ifb device to do inbound impairment on
@@ -119,61 +157,6 @@ class NetemInstance:
 
         return True
 
-    def _generate_filters(self, filter_list):
-        filter_strings = []
-        filter_strings_ipv6 = []
-        for tcfilter in filter_list:
-            filter_tokens = tcfilter.split(',')
-            try:
-                filter_string = ''
-                filter_string_ipv6 = ''
-                for token in filter_tokens:
-                    token_split = token.split('=')
-                    key = token_split[0]
-                    value = token_split[1]
-                    # Check for ipv6 addresses and add them to the appropriate
-                    # filter string
-                    if key == 'src' or key == 'dst':
-                        if '::' in value:
-                            filter_string_ipv6 += 'match ip6 {0} {1} '.format(
-                                key, value)
-                        else:
-                            filter_string += 'match ip {0} {1} '.format(
-                                key, value)
-                    else:
-                        filter_string += 'match ip {0} {1} '.format(key, value)
-                        filter_string_ipv6 += 'match ip6 {0} {1} '.format(
-                            key, value)
-                    if key == 'sport' or key == 'dport':
-                        filter_string += '0xffff '
-                        filter_string_ipv6 += '0xffff '
-            except IndexError:
-                print('Invalid filter parameters')
-
-            if filter_string:
-                filter_strings.append(filter_string)
-            if filter_string_ipv6:
-                filter_strings_ipv6.append(filter_string_ipv6)
-
-        return filter_strings, filter_strings_ipv6
-
-    def teardown(self):
-        if self.inbound:
-            subprocess.call(
-                shlex.split(
-                    'tc filter del dev {0} parent ffff: protocol ip prio 1'.format(
-                        self.real_nic)))
-            subprocess.call(
-                shlex.split(
-                    'tc qdisc del dev {0} ingress'.format(
-                        self.real_nic)))
-            subprocess.call(shlex.split('ip link set dev ifb0 down'))
-        subprocess.call(
-            shlex.split(
-                'tc qdisc del root dev {0}'.format(
-                    self.nic)))
-        print('Network impairment teardown complete.')
-
     def netem(
             self,
             loss_ratio=0,
@@ -237,6 +220,23 @@ class NetemInstance:
                 'Impairment stopped timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
+
+    def teardown(self):
+        if self.inbound:
+            subprocess.call(
+                shlex.split(
+                    'tc filter del dev {0} parent ffff: protocol ip prio 1'.format(
+                        self.real_nic)))
+            subprocess.call(
+                shlex.split(
+                    'tc qdisc del dev {0} ingress'.format(
+                        self.real_nic)))
+            subprocess.call(shlex.split('ip link set dev ifb0 down'))
+        subprocess.call(
+            shlex.split(
+                'tc qdisc del root dev {0}'.format(
+                    self.nic)))
+        print('Network impairment teardown complete.')
 
 
 def main():
