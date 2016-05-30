@@ -391,8 +391,8 @@ def main():
             print("NetemInstance failed to initialize correctly. Terminating")
             netem.teardown()
             exit(1)
-    except AssertionError as e:
-        traceback.print_exception(type(e), e, e.__traceback__)
+    except AssertionError:
+        traceback.print_exc()
         netem.teardown()
         exit(5)
 
