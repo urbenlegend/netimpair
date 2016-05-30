@@ -1,7 +1,7 @@
 # netimpair
 An easy-to-use network impairment script for Linux written in Python
 
-netimpair.py is a CLI tool that simulates bad network conditions on Linux machines. It essentially is a wrapper script around the Linux netem module and the tc command. Using tc and netem is sometimes difficult, unintuitive or tedious at best, especially if you only want to impair a specific subset of network traffic. netimpair.py automates all of this and provides a simpler CLI interface for basic network impairment needs.
+netimpair.py is a CLI tool that simulates bad network conditions on Linux machines. It essentially is a wrapper script around the Linux netem module and the `tc` command. Using `tc` and netem is sometimes difficult, unintuitive or tedious at best, especially if you only want to impair a specific subset of network traffic. netimpair.py automates all of this and provides a simpler CLI interface for basic network impairment needs.
 
 **NOTE:** Fedora users may need to install kernel-modules-extra if they're getting `RTNETLINK: No file or directory found` errors)
 
