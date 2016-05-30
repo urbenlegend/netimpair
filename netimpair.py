@@ -38,6 +38,19 @@ import traceback
 
 class NetemInstance:
 
+    def __init__(self, nic, inbound, include, exclude):
+        self.inbound = inbound
+        self.include = include
+        self.exclude = exclude
+
+        if self.inbound:
+            # Create virtual ifb device to do inbound impairment on
+            self.real_nic = nic
+            self.nic = 'ifb1'
+        else:
+            # Do normal outbound impairment so no virtual device necessary
+            self.nic = nic
+
     @staticmethod
     def _call(command):
         '''Run command.'''
@@ -87,12 +100,8 @@ class NetemInstance:
 
         return filter_strings, filter_strings_ipv6
 
-    def initialize(self, nic, inbound, include, exclude):
-        if inbound:
-            # Create virtual ifb device to do inbound impairment on
-            self.inbound = True
-            self.real_nic = nic
-            self.nic = 'ifb1'
+    def initialize(self):
+        if self.inbound:
             self._check_call('modprobe ifb')
             self._check_call('ip link set dev {0} up'.format(self.nic))
             # Delete ingress device before trying to add
@@ -105,10 +114,6 @@ class NetemInstance:
                 'tc filter replace dev {0} parent ffff: protocol ip prio 1 '
                 'u32 match u32 0 0 flowid 1:1 action mirred egress redirect '
                 'dev {1}'.format(self.real_nic, self.nic))
-        else:
-            # Do normal outbound impairment so no virtual device necessary
-            self.inbound = False
-            self.nic = nic
 
         # Delete network impairments from any previous runs of this script
         self._call('tc qdisc del root dev {0}'.format(self.nic))
@@ -120,12 +125,13 @@ class NetemInstance:
         # Apply selective impairment based on include and exclude parameters
         # Work around broken default append behavior. Add default 'src=0/0' if
         # include list is empty
-        if len(include) == 0:
-            include.append('src=0/0')
-            include.append('src=::/0')
+        if len(self.include) == 0:
+            self.include.append('src=0/0')
+            self.include.append('src=::/0')
 
         print('Including the following for network impairment:')
-        include_filters, include_filters_ipv6 = self._generate_filters(include)
+        include_filters, include_filters_ipv6 = self._generate_filters(
+            self.include)
         for filter_string in include_filters:
             include_filter = 'tc filter add dev {0} protocol ip parent 1:0 ' \
                 'prio 3 u32 {1}flowid 1:3'.format(self.nic, filter_string)
@@ -140,7 +146,8 @@ class NetemInstance:
             self._check_call(include_filter_ipv6)
 
         print('Excluding the following from network impairment:')
-        exclude_filters, exclude_filters_ipv6 = self._generate_filters(exclude)
+        exclude_filters, exclude_filters_ipv6 = self._generate_filters(
+            self.exclude)
         for filter_string in exclude_filters:
             exclude_filter = 'tc filter add dev {0} protocol ip parent 1:0 ' \
                 'prio 1 u32 {1}flowid 1:2'.format(self.nic, filter_string)
@@ -259,8 +266,9 @@ def main():
         exit(1)
 
     try:
-        netem = NetemInstance()
-        netem.initialize(args.nic, args.inbound, args.include, args.exclude)
+        netem = NetemInstance(
+            args.nic, args.inbound, args.include, args.exclude)
+        netem.initialize()
 
         init_signals(netem)
 
