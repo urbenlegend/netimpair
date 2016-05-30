@@ -179,7 +179,7 @@ class NetemInstance(object):
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
                 self.nic))
-        while len(toggle) != 0:
+        while toggle:
             impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: ' \
                 'netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% ' \
                 'reorder {7}% {8}%'.format(
@@ -193,7 +193,7 @@ class NetemInstance(object):
                 'Impairment timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
-            if len(toggle) == 0:
+            if not toggle:
                 return
             self._check_call(
                 'tc qdisc change dev {0} parent 1:3 handle 30: netem'.format(
@@ -211,7 +211,7 @@ class NetemInstance(object):
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(
                 self.nic, buffer_length, latency))
-        while len(toggle) != 0:
+        while toggle:
             impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf ' \
                 'rate {1}kbit buffer {2} latency {3}ms'.format(
                     self.nic, limit, buffer_length, latency)
@@ -223,7 +223,7 @@ class NetemInstance(object):
                 'Impairment timestamp: {0}'.format(
                     datetime.datetime.today()))
             time.sleep(toggle.pop(0))
-            if len(toggle) == 0:
+            if not toggle:
                 return
             self._check_call(
                 'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate '
