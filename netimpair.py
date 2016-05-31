@@ -32,6 +32,7 @@ import os
 import shlex
 import signal
 import subprocess
+import sys
 import time
 import traceback
 
@@ -86,7 +87,7 @@ class NetemInstance(object):
                         filter_string += '0xffff '
                         filter_string_ipv6 += '0xffff '
             except IndexError:
-                print('Invalid filter parameters')
+                print('ERROR: Invalid filter parameters', file=sys.stderr)
 
             if filter_string:
                 filter_strings.append(filter_string)
@@ -266,7 +267,7 @@ def main():
 
     if os.geteuid() != 0:
         print('You need root permissions to enable impairment!',
-              'Please run with sudo or as root.')
+              'Please run with sudo or as root.', file=sys.stderr)
         exit(1)
 
     try:
