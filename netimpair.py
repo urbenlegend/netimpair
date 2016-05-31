@@ -41,18 +41,10 @@ class NetemInstance(object):
 
     def __init__(self, nic, inbound, include, exclude):
         self.inbound = inbound
-        # Work around broken default append behavior
-        # Add default 'src=0/0' if include list is empty
         self.include = include if include else ['src=0/0', 'src=::/0']
         self.exclude = exclude
-
-        if self.inbound:
-            # Create virtual ifb device to do inbound impairment on
-            self.real_nic = nic
-            self.nic = 'ifb1'
-        else:
-            # Do normal outbound impairment so no virtual device necessary
-            self.nic = nic
+        self.nic = 'ifb1' if inbound else nic
+        self.real_nic = nic
 
     @staticmethod
     def _call(command):
@@ -106,6 +98,7 @@ class NetemInstance(object):
     def initialize(self):
         '''Set up traffic control.'''
         if self.inbound:
+            # Create virtual ifb device to do inbound impairment on
             self._check_call('modprobe ifb')
             self._check_call('ip link set dev {0} up'.format(self.nic))
             # Delete ingress device before trying to add
