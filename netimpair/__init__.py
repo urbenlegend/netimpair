@@ -35,27 +35,28 @@ import subprocess
 import sys
 import time
 import traceback
+from contextlib import contextmanager
+from functools import partial
 
 
 class NetemInstance(object):
     '''Wrapper around netem module and tc command.'''
 
-    def __init__(self, nic, inbound, include, exclude):
+    def __init__(self, nic, inbound, include, exclude, subproc=subprocess):
         self.inbound = inbound
         self.include = include if include else ['src=0/0', 'src=::/0']
         self.exclude = exclude
+        self.subproc = subproc
         self.nic = 'ifb1' if inbound else nic
         self.real_nic = nic
 
-    @staticmethod
-    def _call(command):
+    def _call(self, command):
         '''Run command.'''
-        subprocess.call(shlex.split(command))
+        self.subproc.call(shlex.split(command))
 
-    @staticmethod
-    def _check_call(command):
+    def _check_call(self, command):
         '''Run command, raising CalledProcessError if it fails.'''
-        subprocess.check_call(shlex.split(command))
+        self.subproc.check_call(shlex.split(command))
 
     @staticmethod
     def _generate_filters(filter_list):
@@ -156,6 +157,7 @@ class NetemInstance(object):
         print()
 
     # pylint: disable=too-many-arguments
+    @contextmanager
     def netem(
             self,
             loss_ratio=0,
@@ -166,67 +168,57 @@ class NetemInstance(object):
             delay_jitter_corr=0,
             reorder_ratio=0,
             reorder_corr=0,
-            toggle=None):
+    ):
         '''Enable packet loss.'''
-        if toggle is None:
-            toggle = [1000000]
         self._check_call(
-            'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
-                self.nic))
-        while toggle:
-            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: ' \
-                'netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% ' \
-                'reorder {7}% {8}%'.format(
-                    self.nic, loss_ratio, loss_corr, dup_ratio, delay, jitter,
-                    delay_jitter_corr, reorder_ratio, reorder_corr)
-            print('Setting network impairment:')
-            print(impair_cmd)
-            # Set network impairment
-            self._check_call(impair_cmd)
-            print(
-                'Impairment timestamp: {0}'.format(
-                    datetime.datetime.today()))
-            time.sleep(toggle.pop(0))
-            if not toggle:
-                return
-            self._check_call(
-                'tc qdisc change dev {0} parent 1:3 handle 30: netem'.format(
-                    self.nic))
-            print(
-                'Impairment stopped timestamp: {0}'.format(
-                    datetime.datetime.today()))
-            time.sleep(toggle.pop(0))
+            'tc qdisc add dev {0} parent 1:3 handle 30: netem'
+            .format(self.nic)
+        )
+        impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: ' \
+            'netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% ' \
+            'reorder {7}% {8}%'.format(
+                self.nic, loss_ratio, loss_corr, dup_ratio, delay, jitter,
+                delay_jitter_corr, reorder_ratio, reorder_corr)
+        print('Setting network impairment:')
+        print(impair_cmd)
+        # Set network impairment
+        self._check_call(impair_cmd)
+        print('Impairment timestamp: {0}'.format(datetime.datetime.today()))
 
-    def rate(self, limit=0, buffer_length=2000, latency=20, toggle=None):
+        yield
+
+        self._check_call(
+            'tc qdisc change dev {0} parent 1:3 handle 30: netem'.format(
+                self.nic))
+        print('Impairment stopped timestamp: {0}'.format(
+                datetime.datetime.today()))
+
+    @contextmanager
+    def rate(self, limit=0, buffer_length=2000, latency=20):
         '''Enable packet reorder.'''
-        if toggle is None:
-            toggle = [1000000]
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(
-                self.nic, buffer_length, latency))
-        while toggle:
-            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf ' \
-                'rate {1}kbit buffer {2} latency {3}ms'.format(
-                    self.nic, limit, buffer_length, latency)
-            print('Setting network impairment:')
-            print(impair_cmd)
-            # Set network impairment
-            self._check_call(impair_cmd)
-            print(
-                'Impairment timestamp: {0}'.format(
-                    datetime.datetime.today()))
-            time.sleep(toggle.pop(0))
-            if not toggle:
-                return
-            self._check_call(
-                'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate '
-                '1000mbit buffer {1} latency {2}ms'.format(
-                    self.nic, buffer_length, latency))
-            print(
-                'Impairment stopped timestamp: {0}'.format(
-                    datetime.datetime.today()))
-            time.sleep(toggle.pop(0))
+                self.nic, buffer_length, latency)
+        )
+        impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: tbf ' \
+            'rate {1}kbit buffer {2} latency {3}ms'.format(
+                self.nic, limit, buffer_length, latency)
+        print('Setting network impairment:')
+        print(impair_cmd)
+        # Set network impairment
+        self._check_call(impair_cmd)
+        print('Impairment timestamp: {0}'.format(datetime.datetime.today()))
+
+        yield
+
+        self._check_call(
+            'tc qdisc change dev {0} parent 1:3 handle 30: tbf rate '
+            '1000mbit buffer {1} latency {2}ms'.format(
+                self.nic, buffer_length, latency)
+        )
+        print('Impairment stopped timestamp: {0}'.format(
+            datetime.datetime.today()))
 
     def teardown(self):
         '''Reset traffic control rules.'''
@@ -281,24 +273,44 @@ def main():
         # Catch signals
         init_signals(netem)
 
+        toggle = args.toggle
+
         # Do impairment
         if args.subparser_name == 'netem':
-            netem.netem(
-                args.loss_ratio,
-                args.loss_corr,
-                args.dup_ratio,
-                args.delay,
-                args.jitter,
-                args.delay_jitter_corr,
-                args.reorder_ratio,
-                args.reorder_corr,
-                args.toggle)
+            mng = partial(
+                    netem.netem,
+                    args.loss_ratio,
+                    args.loss_corr,
+                    args.dup_ratio,
+                    args.delay,
+                    args.jitter,
+                    args.delay_jitter_corr,
+                    args.reorder_ratio,
+                    args.reorder_corr
+                )
+
         elif args.subparser_name == 'rate':
-            netem.rate(args.limit, args.buffer, args.latency, args.toggle)
+            mng = partial(
+                netem.rate,
+                args.limit,
+                args.buffer,
+                args.latency
+            )
+
+        # perform toggled periods
+        while toggle:
+            with mng():
+                # sleep while enabled
+                time.sleep(toggle.pop(0))
+                if not toggle:
+                    break
+
+            # sleep while disabled
+            time.sleep(toggle.pop(0))
 
         # Shutdown cleanly
         netem.teardown()
-    except subprocess.CalledProcessError:
+    except netem.subproc.CalledProcessError:
         traceback.print_exc()
         netem.teardown()
         exit(5)
