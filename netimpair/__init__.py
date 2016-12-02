@@ -39,7 +39,7 @@ from contextlib import contextmanager
 from functools import partial
 
 
-class NetemInstance(object):
+class Netem(object):
     '''Wrapper around netem module and tc command.'''
 
     def __init__(self, nic, inbound, include, exclude, subproc=subprocess):
@@ -158,7 +158,7 @@ class NetemInstance(object):
 
     # pylint: disable=too-many-arguments
     @contextmanager
-    def netem(
+    def emulate(
             self,
             loss_ratio=0,
             loss_corr=0,
@@ -169,7 +169,8 @@ class NetemInstance(object):
             reorder_ratio=0,
             reorder_corr=0,
     ):
-        '''Enable packet loss.'''
+        '''Enable packet loss using the ``netem`` subcommand to ``tc``.
+        '''
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'
             .format(self.nic)
@@ -195,7 +196,8 @@ class NetemInstance(object):
 
     @contextmanager
     def rate(self, limit=0, buffer_length=2000, latency=20):
-        '''Enable packet reorder.'''
+        '''Enable packet reorder and rate limting using the ``rate`` subcommand to ``tc``.
+        '''
         self._check_call(
             'tc qdisc add dev {0} parent 1:3 handle 30: tbf rate 1000mbit '
             'buffer {1} latency {2}ms'.format(
@@ -263,8 +265,8 @@ def main():
         exit(1)
 
     try:
-        # Create NetemInstance
-        netem = NetemInstance(
+        # Create Netem instance
+        netem = Netem(
             args.nic, args.inbound, args.include, args.exclude)
 
         # Perform setup
@@ -278,7 +280,7 @@ def main():
         # Do impairment
         if args.subparser_name == 'netem':
             mng = partial(
-                    netem.netem,
+                    netem.emulate,
                     args.loss_ratio,
                     args.loss_corr,
                     args.dup_ratio,
@@ -435,7 +437,3 @@ def parse_args():
         'for 3, turn it on for 5, and turn it off for 1')
 
     return argparser.parse_args()
-
-
-if __name__ == '__main__':
-    main()
