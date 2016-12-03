@@ -33,7 +33,7 @@ setup(
     packages=['netimpair'],
     entry_points={
         'console_scripts': [
-            'netimpair = netimpair:main',
+            'netimpair = netimpair.cli:main',
         ]
     },
     classifiers=[
