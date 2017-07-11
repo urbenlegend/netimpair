@@ -344,45 +344,45 @@ def parse_args():
     netem_args = subparsers.add_parser('netem', help='enable packet loss')
     netem_args.add_argument(
         '--loss_ratio',
-        type=int,
+        type=float,
         default=0,
         help='specify percentage of packets that will be lost')
     netem_args.add_argument(
         '--loss_corr',
-        type=int,
+        type=float,
         default=0,
         help='specify a correlation factor for the random packet loss')
     # dup args
     netem_args.add_argument(
         '--dup_ratio',
-        type=int,
+        type=float,
         default=0,
         help='specify percentage of packets that will be duplicated')
     # delay/jitter args
     netem_args.add_argument(
         '--delay',
-        type=int,
+        type=float,
         default=0,
         help='specify an overall delay for each packet')
     netem_args.add_argument(
         '--jitter',
-        type=int,
+        type=float,
         default=0,
         help='specify amount of jitter in milliseconds')
     netem_args.add_argument(
         '--delay_jitter_corr',
-        type=int,
+        type=float,
         default=0,
         help='specify a correlation factor for the random jitter')
     # reorder args
     netem_args.add_argument(
         '--reorder_ratio',
-        type=int,
+        type=float,
         default=0,
         help='specify percentage of packets that will be reordered')
     netem_args.add_argument(
         '--reorder_corr',
-        type=int,
+        type=float,
         default=0,
         help='specify a correlation factor for the random reordering')
     # toggle parameter
@@ -399,7 +399,7 @@ def parse_args():
     rate_args = subparsers.add_parser('rate', help='enable packet reorder')
     rate_args.add_argument(
         '--limit',
-        type=int,
+        type=float,
         default=0,
         help='specify rate limit in kb')
     rate_args.add_argument(
@@ -409,7 +409,7 @@ def parse_args():
         help='specify how many tokens in terms of bytes should be available')
     rate_args.add_argument(
         '--latency',
-        type=int,
+        type=float,
         default=20,
         help='specify the maximum time packets can stay in the '
         'queue before getting dropped')
