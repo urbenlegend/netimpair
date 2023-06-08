@@ -174,11 +174,24 @@ class NetemInstance(object):
             'tc qdisc add dev {0} parent 1:3 handle 30: netem'.format(
                 self.nic))
         while toggle:
-            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: ' \
-                'netem loss {1}% {2}% duplicate {3}% delay {4}ms {5}ms {6}% ' \
-                'reorder {7}% {8}%'.format(
-                    self.nic, loss_ratio, loss_corr, dup_ratio, delay, jitter,
-                    delay_jitter_corr, reorder_ratio, reorder_corr)
+            impair_cmd = 'tc qdisc change dev {0} parent 1:3 handle 30: netem '.format(self.nic)
+            if loss_ratio > 0:
+                impair_cmd += 'loss {0}% '.format(loss_ratio)
+                if loss_corr > 0:
+                    impair_cmd += '{0}% '.format(loss_corr)
+            if dup_ratio > 0:
+                impair_cmd += 'duplicate {0}% '.format(dup_ratio)
+            if delay > 0:
+                impair_cmd += 'delay {0}ms '.format(delay)
+                if jitter > 0:
+                    impair_cmd += '{0}ms '.format(jitter)
+                    if delay_jitter_corr > 0:
+                        impair_cmd += '{0}% '.format(delay_jitter_corr)
+            if reorder_ratio > 0:
+                impair_cmd += 'reorder {0}% '.format(reorder_ratio, reorder_corr)
+                if reorder_corr > 0:
+                    impair_cmd += '{0}% '.format(reorder_corr)
+
             print('Setting network impairment:')
             print(impair_cmd)
             # Set network impairment
